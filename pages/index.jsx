@@ -1,8 +1,7 @@
 import Head from 'next/head';
-import Image from 'next/image';
 import styles from '../styles/Home.module.css';
 
-export default function Home() {
+const Home = () => {
   return (
     <div className={styles.container}>
       <Head>
@@ -17,4 +16,21 @@ export default function Home() {
       </main>
     </div>
   );
-}
+};
+
+export default Home;
+
+export async function getServerSideProps() {
+  const dev = process.env.NODE_ENV !== 'production';
+  const server = dev ? 'http://localhost:3000' : '';
+  const [projectsData, skillsData] = await Promise.all([
+    fetch(`${server}/api/projects`),
+    fetch(`${server}/api/skills`)
+  ]);
+  const projects = await projectsData.json();
+  const skills = await skillsData.json();
+
+  return {
+    props: { projects, skills }
+  };
+};
