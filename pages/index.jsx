@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useState } from 'react';
 import { Combobox } from '@headlessui/react';
 import MyCombobox from '../components/MyCombobox';
+import db from '../utils/db';
 
 const Home = ({ projects, skills }) => {
 
@@ -22,14 +23,16 @@ const Home = ({ projects, skills }) => {
 export default Home;
 
 export async function getServerSideProps() {
-  const dev = process.env.NODE_ENV !== 'production';
-  const server = dev ? 'http://localhost:3000' : '';
   const [projectsData, skillsData] = await Promise.all([
-    fetch(`${server}/api/projects`),
-    fetch(`${server}/api/skills`)
+    db.query(`SELECT projects.*, STRING_AGG(skills.id::text, ',') AS skill_ids
+      FROM projects
+      INNER JOIN project_skills ON projects.id = project_skills.project_id
+      INNER JOIN skills ON skills.id = project_skills.skill_id
+      GROUP BY projects.id;`),
+    db.query(`SELECT skills.* FROM skills;`)
   ]);
-  const projects = await projectsData.json();
-  const skills = await skillsData.json();
+  const projects = projectsData.rows;
+  const skills = skillsData.rows;
 
   return {
     props: { projects, skills }
